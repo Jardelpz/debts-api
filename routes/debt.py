@@ -115,11 +115,14 @@ def pagar(id):
 @app.route('/dividas/pagas', methods=['GET'])
 def pagas():
     dividas = Divida1.query.filter(Divida1.is_pago == True).all()
+
     result = []
     for divida in dividas:
+        person = Person1.query.get(divida.person_id)
         data = {
             "id": divida.id,
             "name": divida.name,
+            "person": person.name,
             "price": divida.price,
             "data_vencimento": divida.data_vencimento,
             "is_pago": divida.is_pago

@@ -1,4 +1,6 @@
-from app import app  #segundo app é da variavel
+from app import app
+import routes.person
+import model.person
 
 
 if __name__ == '__main__':

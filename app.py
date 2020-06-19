@@ -11,12 +11,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-class Divida2(db.Model):
+class Divida1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('person2.id'))
-    name = db.Column(db.String(99))
+    person_id = db.Column(db.Integer, db.ForeignKey('person1.id'))
+    name = db.Column(db.String(98))
     price = db.Column(db.Float)
-    data_vencimento = db.Column(db.String(30))
+    data_vencimento = db.Column(db.String(29))
     is_pago = db.Column(db.Boolean)
 
     def __init__(self, name, price, data_vencimento, is_pago, person_id):
@@ -29,13 +29,15 @@ class Divida2(db.Model):
 
 @app.route('/divida')
 def index():
-    dividas = Divida2.query.all()
+    dividas = Divida1.query.all()
 
     result = []
     for divida in dividas:
+        person = Person1.query.get(divida.person_id)
         data = {
             "id": divida.id,
             "name": divida.name,
+            "person": person.name,
             "price": divida.price,
             "data_vencimento": divida.data_vencimento,
             "Pago": divida.is_pago
@@ -52,7 +54,7 @@ def insert_divida():
     data_vencimento = request.json['data_vencimento']
     is_pago = request.json['is_pago']
     person_id = request.json['person_id']
-    divida = Divida2(name, price, data_vencimento, is_pago, person_id)
+    divida = Divida1(name, price, data_vencimento, is_pago, person_id)
 
     db.session.add(divida)
     db.session.commit()
@@ -62,10 +64,13 @@ def insert_divida():
 
 @app.route('/divida/<id>', methods=['GET'])
 def get_divida(id):
-    divida = Divida2.query.get(id)
+    divida = Divida1.query.get(id)
+    person = Person1.query.get(divida.person_id)
+
     result = {
         "id": divida.id,
         "name": divida.name,
+        "person": person.name,
         "price": divida.price,
         "data_vencimento": divida.data_vencimento,
         "is_pago": divida.is_pago,
@@ -77,7 +82,7 @@ def get_divida(id):
 
 @app.route('/divida/<id>', methods=['PUT'])
 def update_divida(id):
-    divida = Divida2.query.get(id)
+    divida = Divida1.query.get(id)
     divida.name = request.json['name']
     divida.price = request.json['price']
     divida.data_vencimento = request.json['data_vencimento']
@@ -90,7 +95,7 @@ def update_divida(id):
 
 @app.route('/divida/<id>', methods=['DELETE'])
 def delete_divida(id):
-    divida = Divida2.query.get(id)
+    divida = Divida1.query.get(id)
     db.session.delete(divida)
     db.session.commit()
 
@@ -99,11 +104,11 @@ def delete_divida(id):
 
 #--------------Person--------------#
 
-class Person2(db.Model):
+class Person1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    divida = db.relationship("Divida2")
-    name = db.Column(db.String(99))
-    email = db.Column(db.String(149))
+    divida = db.relationship("Divida1")
+    name = db.Column(db.String(98))
+    email = db.Column(db.String(148))
 
     def __init__(self, name, email):
         self.name = name
@@ -112,7 +117,7 @@ class Person2(db.Model):
 
 @app.route('/person')
 def index_person():
-    people = Person2.query.all()
+    people = Person1.query.all()
 
     result = []
     for person in people:
@@ -129,7 +134,7 @@ def index_person():
 def insert_person():
     name = request.json['name']
     email = request.json['email']
-    person = Person2(name, email)
+    person = Person1(name, email)
 
     db.session.add(person)
     db.session.commit()
@@ -139,7 +144,7 @@ def insert_person():
 
 @app.route('/person/<id>', methods=['GET'])
 def get_person(id):
-    person = Person2.query.get(id)
+    person = Person1.query.get(id)
 
     result = {
         'id': person.id,
@@ -153,7 +158,7 @@ def get_person(id):
 @app.route('/person', methods=['PUT'])
 def update_person():
     id = request.json['id']
-    person = Person2.query.get(id)
+    person = Person1.query.get(id)
     person.name = request.json['name']
     person.email = request.json['email']
 
@@ -163,7 +168,7 @@ def update_person():
 
 @app.route('/person/<id>', methods=['DELETE'])
 def delete_person(id):
-    person = Person2.query.get(id)
+    person = Person1.query.get(id)
     db.session.delete(person)
     db.session.commit()
 
@@ -175,8 +180,8 @@ def delete_person(id):
 
 @app.route('/divida/person/<id>', methods=['GET'])
 def divida_by_user(id):
-    dividas = Divida2.query.filter(Divida2.person_id == id).all()
-    person = Person2.query.get(id)
+    dividas = Divida1.query.filter(Divida1.person_id == id).all()
+    person = Person1.query.get(id)
     data = []
 
     for divida in dividas:
@@ -200,7 +205,7 @@ def divida_by_user(id):
 
 @app.route('/divida/pagar/<id>', methods=['PATCH'])
 def pagar(id):
-    divida = Divida2.query.get(id)
+    divida = Divida1.query.get(id)
     divida.is_pago = True
     db.session.commit()
     return f"Divida da {divida.name} no valor de {divida.price} paga com sucesso!"
@@ -208,9 +213,8 @@ def pagar(id):
 
 @app.route('/dividas/pagas', methods=['GET'])
 def pagas():
-    dividas = Divida2.query.filter(Divida2.is_pago is True).all()
+    dividas = Divida1.query.filter(Divida1.is_pago == True).all()
     result = []
-    return dividas
     for divida in dividas:
         data = {
             "id": divida.id,
